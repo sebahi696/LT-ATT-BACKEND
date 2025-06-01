@@ -26,5 +26,9 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/employee', require('./routes/employee'));
 
+app.get('/', (req, res) => {
+  res.send('✅ LT-ATT Backend is working');
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
