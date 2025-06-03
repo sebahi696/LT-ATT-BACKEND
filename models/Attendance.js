@@ -1,35 +1,27 @@
 const mongoose = require('mongoose');
 
 const AttendanceSchema = new mongoose.Schema({
-  employee: {
+  employeeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Employee',
     required: true
   },
   date: {
     type: Date,
     required: true
   },
-  checkIn: {
-    time: Date,
-    qrCode: String
-  },
-  checkOut: {
-    time: Date,
-    qrCode: String
-  },
-  department: {
-    type: String,
+  expectedArrivalTime: {
+    type: Date,
     required: true
   },
-  status: {
-    type: String,
-    enum: ['present', 'absent', 'late'],
-    default: 'absent'
+  actualArrivalTime: {
+    type: Date,
+    required: true
+  },
+  minutesLate: {
+    type: Number,
+    required: true
   }
 });
-
-// Create a compound index for employee and date to ensure unique daily records
-AttendanceSchema.index({ employee: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Attendance', AttendanceSchema); 
