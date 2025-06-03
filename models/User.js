@@ -17,6 +17,7 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['admin', 'manager', 'employee'],
+<<<<<<< HEAD
     default: 'employee'
   },
   salary: {
@@ -42,6 +43,11 @@ const UserSchema = new mongoose.Schema({
     default: function() { return this.role === 'employee' ? 'General' : undefined; }
   },
   createdAt: {
+=======
+    required: true
+  },
+  date: {
+>>>>>>> 22ff5191947ffcd885f47517df388e6a65239926
     type: Date,
     default: Date.now
   }
