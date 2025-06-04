@@ -34,7 +34,7 @@ router.post('/register', [
       name,
       email,
       password,
-      role
+      role: role || 'employee'
     });
 
     const salt = await bcrypt.genSalt(10);

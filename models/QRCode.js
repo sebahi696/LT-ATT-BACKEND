@@ -6,13 +6,9 @@ const QRCodeSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  branch: {
-    type: String,
-    required: true
-  },
-  type: {
-    type: String,
-    enum: ['checkIn', 'checkOut'],
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
     required: true
   },
   validFrom: {
@@ -32,10 +28,24 @@ const QRCodeSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      required: true
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+// Create index for location-based queries
+QRCodeSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('QRCode', QRCodeSchema); 
