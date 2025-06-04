@@ -71,34 +71,45 @@ router.post('/login', [
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Password is required').exists()
 ], async (req, res) => {
+  console.log('Login attempt received:', { email: req.body.email });
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
   const { email, password } = req.body;
 
   try {
+    console.log('Looking up user in database:', email);
     let user = await User.findOne({ email });
 
     if (!user) {
-      console.log('Login attempt failed: User not found -', email);
+      console.log('Login failed: User not found -', email);
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
+    console.log('User found, comparing passwords');
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      console.log('Login attempt failed: Invalid password -', email);
+      console.log('Login failed: Invalid password -', email);
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
+    console.log('Password match successful, generating token');
     const payload = {
       user: {
         id: user.id,
         role: user.role
       }
     };
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      return res.status(500).json({ msg: 'Server configuration error' });
+    }
 
     jwt.sign(
       payload,
@@ -107,8 +118,9 @@ router.post('/login', [
       (err, token) => {
         if (err) {
           console.error('JWT Sign error:', err);
-          throw err;
+          return res.status(500).json({ msg: 'Token generation failed' });
         }
+        console.log('Login successful:', { userId: user.id, role: user.role });
         res.json({ 
           token,
           user: {
