@@ -277,57 +277,69 @@ router.delete('/qr-codes/:id', [auth, adminOrManager], async (req, res) => {
 
 // @route   GET api/admin/dashboard/stats
 // @desc    Get dashboard statistics
-// @access  Private/Admin and Manager
-router.get('/dashboard/stats', [auth, adminOrManager], async (req, res) => {
+// @access  Private/Admin
+router.get('/dashboard/stats', [auth, admin], async (req, res) => {
   try {
+    // Get total employees
+    const totalEmployees = await User.countDocuments({ role: 'employee' });
+
+    // Get today's date range
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const totalEmployees = await User.countDocuments({ role: 'employee' });
-    
-    const todayAttendance = await Attendance.find({
-      date: {
-        $gte: today,
-        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-      }
+    // Get today's attendance
+    const todayAttendance = await Attendance.countDocuments({
+      timestamp: { $gte: today, $lt: tomorrow }
     });
 
-    const presentToday = todayAttendance.filter(record => record.status === 'present').length;
+    // Get present employees today
+    const presentToday = await Attendance.distinct('employee', {
+      timestamp: { $gte: today, $lt: tomorrow },
+      type: 'checkIn'
+    }).length;
+
+    // Calculate absent employees
     const absentToday = totalEmployees - presentToday;
 
     res.json({
       totalEmployees,
-      todayAttendance: todayAttendance.length,
+      todayAttendance,
       presentToday,
       absentToday
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Dashboard stats error:', err);
+    res.status(500).json({ 
+      message: 'Error fetching dashboard statistics',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
 // @route   GET api/admin/dashboard/recent-attendance
 // @desc    Get recent attendance records
-// @access  Private/Admin and Manager
-router.get('/dashboard/recent-attendance', [auth, adminOrManager], async (req, res) => {
+// @access  Private/Admin
+router.get('/dashboard/recent-attendance', [auth, admin], async (req, res) => {
   try {
     const recentAttendance = await Attendance.find()
-      .sort({ date: -1 })
-      .limit(5)
-      .populate('employee', 'name');
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .populate('employee', 'name department')
+      .lean();
 
-    const formattedAttendance = recentAttendance.map(record => ({
-      employeeName: record.employee.name,
-      status: record.status,
-      checkInTime: record.checkIn?.time ? new Date(record.checkIn.time).toLocaleTimeString() : null,
-      checkOutTime: record.checkOut?.time ? new Date(record.checkOut.time).toLocaleTimeString() : null
-    }));
+    if (!recentAttendance) {
+      return res.json([]);
+    }
 
-    res.json(formattedAttendance);
+    res.json(recentAttendance);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Recent attendance error:', err);
+    res.status(500).json({ 
+      message: 'Error fetching recent attendance',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 

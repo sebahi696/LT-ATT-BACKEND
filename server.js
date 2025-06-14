@@ -9,30 +9,24 @@ dotenv.config();
 // Create Express app
 const app = express();
 
+// Connect Database
+connectDB();
+
+// Init Middleware
+app.use(express.json({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
+
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://lt-att-frontend-n7cvr0qwq-sebahis-projects.vercel.app', /\.vercel\.app$/]
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://lt-att-frontend-eklc61m60-sebahis-projects.vercel.app', 'https://lt-att-frontend.vercel.app']
     : 'http://localhost:3000',
   credentials: true,
-  optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-auth-token']
 };
 
-// Connect to MongoDB
-connectDB()
-  .then(() => {
-    console.log('MongoDB connected successfully');
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
-
-// Middleware
 app.use(cors(corsOptions));
-app.use(express.json({ extended: false }));
 
 // Basic route for testing
 app.get('/', (req, res) => {
