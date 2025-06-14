@@ -18,12 +18,43 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://lt-att-frontend-eklc61m60-sebahis-projects.vercel.app', 'https://lt-att-frontend.vercel.app']
-    : 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow all origins during development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, allow Vercel deployments and localhost
+    const allowedOrigins = [
+      /^https:\/\/lt-att-frontend.*\.vercel\.app$/,  // Any Vercel deployment
+      'http://localhost:3000',
+      'https://lt-att-frontend.vercel.app'
+    ];
+
+    if (!origin) {
+      return callback(null, true);  // Allow requests with no origin
+    }
+
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return origin === allowed;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-auth-token']
+  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+  exposedHeaders: ['x-auth-token'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
